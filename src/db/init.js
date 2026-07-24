@@ -63,6 +63,7 @@ function initDb() {
   // 既存 DB へのマイグレーション（カラム追加）
   try { db.exec("ALTER TABLE orders ADD COLUMN slack_thread_ts TEXT"); } catch (_) {}
   try { db.exec("ALTER TABLE vendor_orders ADD COLUMN item_names TEXT"); } catch (_) {}
+  try { db.exec("ALTER TABLE vendor_orders ADD COLUMN stale_notified_at TEXT"); } catch (_) {}
 
   console.log("[db] スキーマ初期化完了");
   return db;
