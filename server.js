@@ -13,11 +13,15 @@ const { initDb } = require("./src/db/init");
 const { handleOrderCreated } = require("./src/webhook/orderHandler");
 const { handleFormSubmitted } = require("./src/webhook/formHandler");
 const { notifyError } = require("./src/slack/notifier");
+const { dashboardRouter } = require("./src/dashboard/router");
 
 const app = express();
 
 app.set("trust proxy", true);
 app.use(express.raw({ type: "application/json" }));
+
+// 管理ダッシュボード（Basic 認証・読み取り専用）
+app.use(dashboardRouter);
 
 function verifyShopifyWebhook(req, bodyBuffer) {
   const hmac = req.headers["x-shopify-hmac-sha256"];

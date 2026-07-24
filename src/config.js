@@ -50,6 +50,10 @@ const config = {
   googleFormEntryVendorName: process.env.GOOGLE_FORM_ENTRY_VENDOR_NAME,
   googleFormWebhookSecret: process.env.GOOGLE_FORM_WEBHOOK_SECRET,
 
+  // 管理ダッシュボード（Basic 認証）。未設定ならダッシュボードは 503 を返す
+  dashboardUser: process.env.DASHBOARD_USER,
+  dashboardPassword: process.env.DASHBOARD_PASSWORD,
+
   dbPath: path.resolve(__dirname, "../data/orders.db"),
 };
 

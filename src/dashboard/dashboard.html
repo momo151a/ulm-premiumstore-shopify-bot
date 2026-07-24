@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>受注ダッシュボード｜アーバンライフメトロ</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --panel: #ffffff; --text: #1a2027; --muted: #6b7683;
+    --border: #e3e8ee; --accent: #2563eb; --accent-soft: #eef3ff;
+    --row-hover: #f7f9fc; --stale: #b42318; --stale-bg: #fef3f2;
+    --shadow: 0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f141a; --panel: #171e26; --text: #e6ebf0; --muted: #93a1b0;
+      --border: #26303b; --accent: #5b8cff; --accent-soft: #1b2636;
+      --row-hover: #1d2731; --stale: #ff9a8f; --stale-bg: #2a1a18;
+      --shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8; --panel: #ffffff; --text: #1a2027; --muted: #6b7683;
+    --border: #e3e8ee; --accent: #2563eb; --accent-soft: #eef3ff;
+    --row-hover: #f7f9fc; --stale: #b42318; --stale-bg: #fef3f2;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141a; --panel: #171e26; --text: #e6ebf0; --muted: #93a1b0;
+    --border: #26303b; --accent: #5b8cff; --accent-soft: #1b2636;
+    --row-hover: #1d2731; --stale: #ff9a8f; --stale-bg: #2a1a18;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .muted { color: var(--muted); }
+  button { font: inherit; cursor: pointer; }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .card .n { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .card .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card.stale { background: var(--stale-bg); border-color: color-mix(in srgb, var(--stale) 40%, transparent); }
+  .card.stale .n { color: var(--stale); }
+
+  /* stale banner */
+  .stale-banner { background: var(--stale-bg); border: 1px solid color-mix(in srgb, var(--stale) 35%, transparent);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; }
+  .stale-banner b { color: var(--stale); }
+  .stale-banner ul { margin: 8px 0 0; padding-left: 18px; }
+  .stale-banner li { margin: 2px 0; }
+
+  /* toolbar */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar input, .toolbar select {
+    font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); color: var(--text);
+  }
+  .toolbar input { flex: 1; min-width: 180px; }
+
+  /* table */
+  .table-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody tr:last-child td { border-bottom: none; }
+  tr.stale-row td:first-child { box-shadow: inset 3px 0 0 var(--stale); }
+
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }
+  .b-received  { background: #eef2f6; color: #475467; }
+  .b-emailed   { background: #fff4e5; color: #b54708; }
+  .b-shipped   { background: #e7f6ec; color: #067647; }
+  .b-fulfilled { background: #e7f0ff; color: #175cd3; }
+  .b-delayed   { background: #fbe9e7; color: #b42318; }
+  .b-error     { background: #fee4e2; color: #b42318; }
+  .b-pending   { background: #eef2f6; color: #475467; }
+  @media (prefers-color-scheme: dark) {
+    .b-received,.b-pending { background:#232f3b; color:#a9b6c4; }
+    .b-emailed { background:#3a2a12; color:#f0b978; }
+    .b-shipped { background:#12301f; color:#6ee7a8; }
+    .b-fulfilled { background:#16263f; color:#8ab4ff; }
+    .b-delayed,.b-error { background:#3a1c19; color:#ff9a8f; }
+  }
+  .chip { display:inline-block; font-size:11px; color:var(--muted); margin-left:6px; }
+
+  /* detail drawer */
+  .overlay { position: fixed; inset: 0; background: rgba(10,15,22,.45); display: none; z-index: 10; }
+  .overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(520px, 94vw);
+    background: var(--panel); border-left: 1px solid var(--border);
+    transform: translateX(100%); transition: transform .18s ease; z-index: 11;
+    overflow-y: auto; padding: 20px;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer h2 { font-size: 18px; margin: 0 0 4px; }
+  .drawer .close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; color: var(--muted); }
+  .kv { display: grid; grid-template-columns: 96px 1fr; gap: 4px 10px; margin: 14px 0; }
+  .kv dt { color: var(--muted); font-size: 13px; }
+  .kv dd { margin: 0; word-break: break-word; }
+  .vendor { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  .vendor .vh { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .vendor .vname { font-weight: 640; }
+  .vendor .meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .vendor .items { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+  .section-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 18px 0 4px; }
+
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .theme-btn { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 6px 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 受注ダッシュボード</h1>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <span class="muted" id="updated"></span>
+    <button class="theme-btn" id="themeBtn" title="表示切替">◐</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+  <div id="staleBanner"></div>
+
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="注文番号・顧客名で検索…" />
+    <select id="statusFilter">
+      <option value="">すべてのステータス</option>
+      <option value="received">受信</option>
+      <option value="vendor_emailed">発注済</option>
+      <option value="fulfilled">完了</option>
+      <option value="error">エラー</option>
+      <option value="__stale">⚠ 滞留のみ</option>
+    </select>
+    <button class="theme-btn" id="reload">↻ 更新</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>注文番号</th><th>受注日時(JST)</th><th>顧客</th>
+          <th>状態</th><th>ベンダー進捗</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none;">該当する注文がありません</div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer"><button class="close" id="drawerClose">×</button><div id="detail"></div></aside>
+
+<script>
+const ORDER_STATUS = { received:["受信","b-received"], vendor_emailed:["発注済","b-emailed"], fulfilled:["完了","b-fulfilled"], error:["エラー","b-error"] };
+const VENDOR_STATUS = { pending:["準備中","b-pending"], emailed:["返信待ち","b-emailed"], shipped:["発送済","b-shipped"], delayed:["遅延","b-delayed"], fulfilled:["完了","b-fulfilled"] };
+
+let ALL = [];
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function badge(map, key){ const [l,c] = map[key] || [key||"—","b-received"]; return `<span class="badge ${c}">${esc(l)}</span>`; }
+function fmtJst(iso){ if(!iso) return "—"; const d = new Date(iso); if(isNaN(d)) return esc(iso);
+  return d.toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}); }
+
+function renderStats(s){
+  const el = document.getElementById("stats");
+  const cards = [
+    ["総注文数", s.total, ""],
+    ["本日", s.today, ""],
+    ["直近7日", s.last7d, ""],
+    [`滞留(${s.staleBusinessDays}営業日超)`, s.stale, s.stale>0?"stale":""],
+  ];
+  el.innerHTML = cards.map(([l,n,cls]) => `<div class="card ${cls}"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`).join("");
+}
+
+function renderStaleBanner(orders){
+  const stale = orders.filter(o => o.stale);
+  const el = document.getElementById("staleBanner");
+  if(!stale.length){ el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="stale-banner"><b>⚠ 滞留注文 ${stale.length} 件</b>（出荷依頼から3営業日以上・ベンダー未返信）
+    <ul>${stale.slice(0,8).map(o=>`<li><a href="#" data-id="${esc(o.order_id)}" class="stale-link">${esc(o.order_number)}</a> — ${esc(o.customer_name||"")}（${o.waiting_count}社 返信待ち）</li>`).join("")}
+    ${stale.length>8?`<li class="muted">ほか ${stale.length-8} 件…</li>`:""}</ul></div>`;
+  el.querySelectorAll(".stale-link").forEach(a => a.addEventListener("click", e => { e.preventDefault(); openDetail(a.dataset.id); }));
+}
+
+function progress(o){
+  const total = o.vendor_count || 0;
+  if(!total) return '<span class="muted">—</span>';
+  let parts = [];
+  if(o.done_count) parts.push(`✅${o.done_count}`);
+  if(o.waiting_count) parts.push(`⏳${o.waiting_count}`);
+  if(o.delayed_count) parts.push(`⚠${o.delayed_count}`);
+  return `${o.done_count||0}/${total} 完了 <span class="chip">${parts.join(" ")}</span>`;
+}
+
+function renderRows(){
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const f = document.getElementById("statusFilter").value;
+  let list = ALL.filter(o => {
+    if(f === "__stale"){ if(!o.stale) return false; }
+    else if(f && o.order_status !== f) return false;
+    if(q && !(String(o.order_number).toLowerCase().includes(q) || String(o.customer_name||"").toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const tb = document.getElementById("rows");
+  tb.innerHTML = list.map(o => `
+    <tr data-id="${esc(o.order_id)}" class="${o.stale?"stale-row":""}">
+      <td><b>${esc(o.order_number)}</b> ${o.stale?'<span class="badge b-delayed">滞留</span>':""}</td>
+      <td>${fmtJst(o.created_at_jst)}</td>
+      <td>${esc(o.customer_name||"—")}</td>
+      <td>${badge(ORDER_STATUS, o.order_status)}</td>
+      <td>${progress(o)}</td>
+    </tr>`).join("");
+  document.getElementById("empty").style.display = list.length ? "none" : "block";
+  tb.querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => openDetail(tr.dataset.id)));
+}
+
+async function openDetail(orderId){
+  const box = document.getElementById("detail");
+  box.innerHTML = '<div class="empty">読み込み中…</div>';
+  openDrawer();
+  try {
+    const r = await fetch("/api/orders/" + encodeURIComponent(orderId));
+    if(!r.ok) throw new Error("取得失敗 ("+r.status+")");
+    const { order, vendors } = await r.json();
+    box.innerHTML = `
+      <h2>${esc(order.order_number)} ${order.stale?'<span class="badge b-delayed">滞留</span>':""}</h2>
+      <div class="muted">${badge(ORDER_STATUS, order.status)} ${order.error_reason?("・"+esc(order.error_reason)):""}</div>
+      <dl class="kv">
+        <dt>受注日時</dt><dd>${fmtJst(order.created_at_jst)}</dd>
+        <dt>顧客名</dt><dd>${esc(order.customer_name||"—")}</dd>
+        <dt>メール</dt><dd>${esc(order.customer_email||"—")}</dd>
+        <dt>電話</dt><dd>${esc(order.customer_phone||"—")}</dd>
+        <dt>住所</dt><dd>${esc(order.customer_address||"—")}</dd>
+      </dl>
+      <div class="section-title">ベンダー別 (${vendors.length})</div>
+      ${vendors.map(v => `
+        <div class="vendor">
+          <div class="vh"><span class="vname">${esc(v.vendor_name)}</span> ${badge(VENDOR_STATUS, v.status)}</div>
+          <div class="meta">
+            発注: ${fmtJst(v.email_sent_at)}<br>
+            ${v.tracking_number?("追跡: "+esc(v.carrier||"")+" "+esc(v.tracking_number)+"<br>"):""}
+            ${v.shipped_at?("発送: "+fmtJst(v.shipped_at)+"<br>"):""}
+            ${v.delayed_reason?('<span style="color:var(--stale)">遅延: '+esc(v.delayed_reason)+"</span><br>"):""}
+            ${v.customer_notified_at?("顧客通知: "+fmtJst(v.customer_notified_at)):""}
+          </div>
+          ${Array.isArray(v.item_names)&&v.item_names.length?`<ul class="items">${v.item_names.map(i=>`<li>${esc(i.title||"")}${i.variantTitle?(" / "+esc(i.variantTitle)):""} ×${esc(i.quantity||1)}</li>`).join("")}</ul>`:""}
+        </div>`).join("")}
+    `;
+  } catch(e){ box.innerHTML = '<div class="empty">'+esc(e.message)+"</div>"; }
+}
+
+function openDrawer(){ document.getElementById("overlay").classList.add("open"); document.getElementById("drawer").classList.add("open"); }
+function closeDrawer(){ document.getElementById("overlay").classList.remove("open"); document.getElementById("drawer").classList.remove("open"); }
+
+async function load(){
+  try {
+    const r = await fetch("/api/overview");
+    if(!r.ok) throw new Error("読み込み失敗 ("+r.status+")");
+    const { stats, orders } = await r.json();
+    ALL = orders;
+    renderStats(stats);
+    renderStaleBanner(orders);
+    renderRows();
+    document.getElementById("updated").textContent = "更新: " + new Date().toLocaleTimeString("ja-JP",{timeZone:"Asia/Tokyo"});
+  } catch(e){
+    document.getElementById("rows").innerHTML = "";
+    document.getElementById("empty").style.display = "block";
+    document.getElementById("empty").textContent = e.message;
+  }
+}
+
+// theme toggle
+const THEME_KEY = "cocre-dash-theme";
+function applyTheme(t){ if(t) document.documentElement.setAttribute("data-theme", t); }
+applyTheme(localStorage.getItem(THEME_KEY));
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  applyTheme(next); localStorage.setItem(THEME_KEY, next);
+});
+
+document.getElementById("search").addEventListener("input", renderRows);
+document.getElementById("statusFilter").addEventListener("change", renderRows);
+document.getElementById("reload").addEventListener("click", load);
+document.getElementById("overlay").addEventListener("click", closeDrawer);
+document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeDrawer(); });
+
+load();
+</script>
+</body>
+</html>
